@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Timer Debat SMK Negeri 2 Nganjuk</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@700&family=Inter:wght@400;700&display=swap');
+        
+        body {
+            background-color: #020617;
+            color: white;
+            font-family: 'Inter', sans-serif;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+        }
+
+        .aspect-16-9 {
+            aspect-ratio: 16 / 9;
+            width: 95vw;
+            max-width: 1100px;
+        }
+
+        .timer-font {
+            font-family: 'JetBrains Mono', monospace;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .status-pulse {
+            animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: .3; }
+        }
+
+        .bg-card {
+            background: linear-gradient(145deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.8) 100%);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .critical-glow {
+            text-shadow: 0 0 40px rgba(239, 68, 68, 0.6);
+        }
+
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+
+        .logo-clean {
+            width: 120px;
+            height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 5px;
+            pointer-events: none;
+        }
+
+        .clickable-input {
+            cursor: text !important;
+            position: relative;
+            z-index: 100 !important;
+            pointer-events: auto !important;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body class="p-4">
+
+    <div class="aspect-16-9 bg-card rounded-[2.5rem] shadow-2xl flex flex-col items-center justify-between p-12 relative overflow-hidden border border-white/10">
+        <!-- Background Glow -->
+        <div id="glow-bg" class="absolute inset-0 bg-blue-500/5 blur-[120px] rounded-full transition-colors duration-700 pointer-events-none"></div>
+
+        <!-- Header: Logos and Title -->
+        <div class="z-10 w-full flex items-center justify-between pointer-events-none">
+            <div class="logo-clean">
+                <img src="./smekda.png" alt="Logo SMK" class="max-w-full max-h-full object-contain drop-shadow-xl">
+            </div>
+
+            <div class="text-center flex flex-col items-center flex-1 mx-4">
+                <div class="flex flex-col items-center gap-1">
+                    <h1 class="text-4xl font-black tracking-[0.2em] text-white uppercase drop-shadow-md">LOMBA DEBAT</h1>
+                    <h2 class="text-xl font-bold tracking-[0.5em] text-blue-400 uppercase opacity-90">SMK NEGERI 2 NGANJUK</h2>
+                </div>
+                
+                <div id="setup-controls" class="mt-6 flex items-center gap-3 bg-slate-950/80 p-3 px-6 rounded-2xl border border-white/10 shadow-2xl transition-all duration-300 relative pointer-events-auto">
+                    <div class="flex items-center gap-2">
+                        <input type="number" id="input-min" value="03" min="0" max="99" 
+                            class="clickable-input text-2xl font-bold w-14 h-12 text-center text-white focus:ring-2 focus:ring-blue-500 focus:outline-none focus:text-blue-400 transition-all">
+                        <span class="text-slate-600 font-bold text-2xl">:</span>
+                        <input type="number" id="input-sec" value="00" min="0" max="59" 
+                            class="clickable-input text-2xl font-bold w-14 h-12 text-center text-white focus:ring-2 focus:ring-blue-500 focus:outline-none focus:text-blue-400 transition-all">
+                    </div>
+                    <div class="w-[1px] h-8 bg-slate-800 mx-2"></div>
+                    <div class="flex items-center gap-2">
+                        <div id="status-dot" class="w-3 h-3 rounded-full bg-slate-600"></div>
+                        <p id="status-text" class="text-slate-500 font-bold text-[10px] tracking-[0.2em] uppercase">Standby</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="logo-clean">
+                <img src="./osis.png" alt="Logo OSIS" class="max-w-full max-h-full object-contain drop-shadow-xl">
+            </div>
+        </div>
+
+        <!-- Timer Display -->
+        <div id="timer-display" class="timer-font text-[16rem] leading-none font-bold text-white z-0 drop-shadow-2xl transition-all duration-300 select-none pointer-events-none">
+            03:00
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="w-full max-w-4xl bg-slate-950/80 h-4 rounded-full mt-4 overflow-hidden z-10 border border-white/5 shadow-2xl pointer-events-none">
+            <div id="progress-bar" class="bg-blue-600 h-full w-full transition-all duration-1000 ease-linear shadow-[0_0_15px_rgba(37,99,235,0.5)]"></div>
+        </div>
+
+        <!-- Controls -->
+        <div class="flex gap-6 mt-6 z-10">
+            <button id="start-btn" onclick="toggleTimer()" class="w-48 bg-blue-600 hover:bg-blue-500 text-white py-4 rounded-2xl font-bold text-xl transition-all transform active:scale-95 shadow-xl shadow-blue-900/30">
+                MULAI
+            </button>
+            <button onclick="resetTimer()" class="w-48 bg-slate-800/80 hover:bg-slate-700 text-slate-300 py-4 rounded-2xl font-bold text-xl transition-all transform active:scale-95 border border-white/10 backdrop-blur-sm">
+                RESET
+            </button>
+        </div>
+
+        <!-- Finish Overlay -->
+        <div id="finish-overlay" class="hidden absolute inset-0 bg-red-700/95 backdrop-blur-2xl z-[200] flex flex-col items-center justify-center animate-in zoom-in duration-300">
+            <div class="text-white text-center">
+                <h2 class="text-[10rem] font-black leading-none mb-10 tracking-tighter uppercase drop-shadow-2xl">Waktu Habis!</h2>
+                <div class="flex gap-8 items-center justify-center">
+                    <button onclick="restartTimer()" class="bg-white text-red-700 hover:bg-slate-100 px-14 py-6 rounded-[2rem] text-4xl font-black shadow-[0_20px_60px_rgba(0,0,0,0.4)] transition-all transform hover:scale-105 active:scale-95">
+                        RESTART
+                    </button>
+                    <button onclick="resetTimer()" class="bg-transparent border-4 border-white text-white hover:bg-white/10 px-14 py-6 rounded-[2rem] text-4xl font-black shadow-2xl transition-all transform hover:scale-105 active:scale-95">
+                        MULAI BARU
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <audio id="alarm-sound" preload="auto">
+        <source src="https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3" type="audio/mpeg">
+    </audio>
+
+    <script>
+        let timeLeft = 180;
+        let totalTime = 180;
+        let timerId = null;
+        let isRunning = false;
+
+        const display = document.getElementById('timer-display');
+        const startBtn = document.getElementById('start-btn');
+        const progressBar = document.getElementById('progress-bar');
+        const statusText = document.getElementById('status-text');
+        const statusDot = document.getElementById('status-dot');
+        const glowBg = document.getElementById('glow-bg');
+        const overlay = document.getElementById('finish-overlay');
+        const alarmSound = document.getElementById('alarm-sound');
+        const inputMin = document.getElementById('input-min');
+        const inputSec = document.getElementById('input-sec');
+        const setupControls = document.getElementById('setup-controls');
+
+        function speak(text) {
+            if ('speechSynthesis' in window) {
+                window.speechSynthesis.cancel(); // Hentikan suara sebelumnya jika ada
+                const utterance = new SpeechSynthesisUtterance(text);
+                utterance.lang = 'id-ID';
+                utterance.rate = 1.0;
+                window.speechSynthesis.speak(utterance);
+            }
+        }
+
+        function syncFromInput() {
+            if (isRunning) return;
+            let m = parseInt(inputMin.value) || 0;
+            let s = parseInt(inputSec.value) || 0;
+            
+            if (s > 59) { s = 59; inputSec.value = 59; }
+            if (m > 99) { m = 99; inputMin.value = 99; }
+
+            timeLeft = (m * 60) + s;
+            totalTime = timeLeft;
+            updateDisplay();
+        }
+
+        inputMin.addEventListener('input', syncFromInput);
+        inputSec.addEventListener('input', syncFromInput);
+
+        function updateDisplay() {
+            const minutes = Math.floor(timeLeft / 60);
+            const seconds = timeLeft % 60;
+            display.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            
+            const progressPercent = totalTime > 0 ? (timeLeft / totalTime) * 100 : 0;
+            progressBar.style.width = `${progressPercent}%`;
+
+            if (timeLeft <= 10 && timeLeft > 0) {
+                progressBar.classList.remove('bg-blue-600');
+                progressBar.classList.add('bg-red-600');
+                display.classList.add('text-red-500', 'critical-glow');
+            } else {
+                progressBar.classList.add('bg-blue-600');
+                progressBar.classList.remove('bg-red-600');
+                display.classList.remove('text-red-500', 'critical-glow');
+            }
+        }
+
+        function toggleTimer() {
+            if (isRunning) pauseTimer();
+            else startTimer();
+        }
+
+        function startTimer() {
+            syncFromInput();
+            if (timeLeft <= 0) return;
+            isRunning = true;
+            setupControls.style.opacity = "0.3";
+            setupControls.style.pointerEvents = "none";
+            statusText.textContent = 'Berjalan';
+            statusDot.className = 'w-3 h-3 rounded-full bg-green-500';
+            startBtn.textContent = 'PAUSE';
+            startBtn.classList.replace('bg-blue-600', 'bg-amber-600');
+            
+            timerId = setInterval(() => {
+                if (timeLeft > 0) {
+                    timeLeft--;
+                    updateDisplay();
+                } else {
+                    processFinish();
+                }
+            }, 1000);
+        }
+
+        function pauseTimer() {
+            clearInterval(timerId);
+            isRunning = false;
+            statusText.textContent = 'Pause';
+            statusDot.className = 'w-3 h-3 rounded-full bg-amber-500';
+            startBtn.textContent = 'LANJUT';
+            startBtn.classList.replace('bg-amber-600', 'bg-blue-600');
+        }
+
+        function processFinish() {
+            clearInterval(timerId);
+            isRunning = false;
+            timeLeft = 0;
+            updateDisplay();
+            alarmSound.play();
+            overlay.classList.remove('hidden');
+            
+            // Memberikan jeda singkat agar suara terdengar jelas setelah alarm
+            setTimeout(() => {
+                speak("Waktu habis");
+            }, 500);
+        }
+
+        function restartTimer() {
+            resetTimer();
+            setTimeout(startTimer, 150);
+        }
+
+        function resetTimer() {
+            clearInterval(timerId);
+            isRunning = false;
+            setupControls.style.opacity = "1";
+            setupControls.style.pointerEvents = "auto";
+            syncFromInput(); 
+            overlay.classList.add('hidden');
+            startBtn.textContent = 'MULAI';
+            if (startBtn.classList.contains('bg-amber-600')) {
+                startBtn.classList.replace('bg-amber-600', 'bg-blue-600');
+            }
+            statusText.textContent = 'Standby';
+            statusDot.className = 'w-3 h-3 rounded-full bg-slate-600';
+            alarmSound.pause();
+            alarmSound.currentTime = 0;
+            window.speechSynthesis.cancel();
+        }
+
+        window.onload = syncFromInput;
+    </script>
+</body>
+</html>
